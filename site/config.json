@@ -1,0 +1,10 @@
+{
+  "name": "GridPunks",
+  "contract": "",
+  "chainId": 4663,
+  "chainName": "Robinhood Chain",
+  "rpc": "https://rpc.mainnet.chain.robinhood.com",
+  "explorer": "https://robinhoodchain.blockscout.com",
+  "priceEth": "0.0003",
+  "x": "https://x.com/"
+}

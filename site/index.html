@@ -1,0 +1,120 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<title>GridPunks</title>
+<meta name="description" content="10,000 pixel punks hidden in a 100 × 100 grid on Robinhood Chain. Pick a plot, meet your punk.">
+<link rel="icon" href="favicon.svg" type="image/svg+xml">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,500;12..96,700;12..96,800&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="css/site.css">
+</head>
+<body>
+<header class="bar">
+  <a class="brand" href="#top" aria-label="GridPunks home"><canvas id="brandPunk" width="24" height="24"></canvas><span>GridPunks</span></a>
+  <nav class="nav"><a href="#board">The Grid</a><a href="#how">How it works</a></nav>
+  <button class="btn btn-line" id="connect" type="button">Connect wallet</button>
+</header>
+
+<main id="top">
+  <section class="hero">
+    <p class="kicker">100 × 100 plots · Robinhood Chain</p>
+    <h1>Pick a plot.<br><span>Meet your punk.</span></h1>
+    <p class="lede">Ten thousand pixel punks are hiding in this grid. Choose any empty plot you like; the chain decides who lives there and shows you the moment your mint lands. Every claim fills one more pixel of the final mural.</p>
+    <dl class="specs">
+      <div><dt>Plots</dt><dd class="num">10,000</dd></div>
+      <div><dt>Price</dt><dd class="num"><span id="priceLabel">0.0003</span> ETH</dd></div>
+      <div><dt>Claimed</dt><dd class="num"><span id="claimed">0</span></dd></div>
+      <div><dt>Per mint</dt><dd class="num">up to 20</dd></div>
+    </dl>
+  </section>
+
+  <section class="board" id="board" aria-label="The grid">
+    <div class="stage">
+      <div class="stage-top">
+        <div class="legend">
+          <span><i class="sw sw-empty"></i>Empty</span>
+          <span><i class="sw sw-sel"></i>Your pick</span>
+          <span><i class="sw sw-taken"></i>Claimed</span>
+        </div>
+        <form class="jump" id="jumpForm" autocomplete="off">
+          <label class="sr" for="jx">X</label><input id="jx" inputmode="numeric" placeholder="x" maxlength="2">
+          <label class="sr" for="jy">Y</label><input id="jy" inputmode="numeric" placeholder="y" maxlength="2">
+          <button class="btn btn-line btn-xs" type="submit">Go</button>
+        </form>
+      </div>
+      <div class="canvas-wrap" id="wrap">
+        <canvas id="grid" aria-label="Interactive 100 by 100 grid. Click empty plots to select them."></canvas>
+        <div class="hud num" id="hud" hidden></div>
+        <div class="zoom">
+          <button type="button" class="btn btn-line btn-xs" id="zoomIn" aria-label="Zoom in">+</button>
+          <button type="button" class="btn btn-line btn-xs" id="zoomOut" aria-label="Zoom out">−</button>
+          <button type="button" class="btn btn-line btn-xs" id="zoomFit">Fit</button>
+        </div>
+      </div>
+      <p class="hint muted">Scroll or pinch to zoom, drag to move. Click an empty plot to add it, click again to drop it.</p>
+    </div>
+
+    <aside class="panel" id="panel">
+      <div class="inspect" id="inspect">
+        <div class="inspect-art"><canvas id="inspectArt" width="240" height="240"></canvas></div>
+        <div class="inspect-info">
+          <p class="kicker" id="inspectCoord">Plot —</p>
+          <h3 id="inspectTitle">Hover the grid</h3>
+          <p class="muted small" id="inspectText">Empty plots show a question mark. Claimed plots show their punk and owner.</p>
+          <ul class="traits" id="inspectTraits"></ul>
+        </div>
+      </div>
+
+      <div class="cart">
+        <div class="cart-head">
+          <h3>Your plots</h3>
+          <button type="button" class="link" id="clearSel" hidden>Clear</button>
+        </div>
+        <ul class="chips" id="chips"><li class="muted small">No plots picked yet.</li></ul>
+        <div class="row-actions">
+          <button type="button" class="btn btn-line btn-xs" id="luckyBtn">Pick a random plot</button>
+        </div>
+        <div class="total">
+          <span class="muted">Total</span>
+          <strong class="num" id="total">0 ETH</strong>
+        </div>
+        <button type="button" class="btn btn-lime btn-block" id="mintBtn" disabled>Pick at least one plot</button>
+        <p class="status small" id="status" role="status" aria-live="polite"></p>
+      </div>
+    </aside>
+  </section>
+
+  <section class="how" id="how">
+    <h2>How it works</h2>
+    <div class="qa">
+      <details open><summary>What do I actually choose?</summary><p>The plot. Each of the 10,000 plots is one NFT, and its token number is its position (plot x, y has id <span class="num">y × 100 + x</span>). Pick a corner, your birthday, a spot next to a friend, or the dead centre.</p></details>
+      <details><summary>Who decides the punk?</summary><p>The contract. When your mint lands it draws one punk at random from all the punks nobody has found yet, so no punk can appear twice and no plot is rarer than another before it is claimed. Minting from another contract is blocked, so nobody can retry until they get a rare one.</p></details>
+      <details><summary>What does it cost?</summary><p><span class="num" id="priceLabel2">0.0003</span> ETH per plot, plus network gas, which on Robinhood Chain is a tiny fraction of that. You can claim up to 20 plots in one transaction.</p></details>
+      <details><summary>Which wallet do I need?</summary><p>Any EVM wallet in your browser (MetaMask, Rabby, Coinbase Wallet, and similar) with a little ETH on Robinhood Chain. The site asks your wallet to add the network if it is missing.</p></details>
+      <details><summary>Can I check the set was fixed in advance?</summary><p>Yes. All 10,000 punks are in <a href="data/traits.json">traits.json</a>, and its sha256 hash is stored in the contract's <code>provenance</code> field before the mint opens.</p><p class="num small muted" id="provHash">loading…</p></details>
+      <details><summary>Royalties?</summary><p>10% on secondary sales, declared on-chain (ERC-2981) for marketplaces that honour it.</p></details>
+    </div>
+  </section>
+</main>
+
+<footer class="foot">
+  <span>GridPunks · community project, not affiliated with Robinhood.</span>
+  <span><a id="contractLink" href="#" target="_blank" rel="noopener">Contract</a> · <a id="xLink" href="https://x.com/" target="_blank" rel="noopener">X</a></span>
+</footer>
+
+<div class="reveal" id="reveal" hidden>
+  <div class="reveal-card" role="dialog" aria-modal="true" aria-labelledby="revealTitle">
+    <p class="kicker">Mint confirmed</p>
+    <h2 id="revealTitle">You found them.</h2>
+    <div class="reveal-grid" id="revealGrid"></div>
+    <button type="button" class="btn btn-lime" id="revealClose">Back to the grid</button>
+  </div>
+</div>
+
+<script src="js/punks.js"></script>
+<script src="js/app.js"></script>
+</body>
+</html>
