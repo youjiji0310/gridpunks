@@ -1,5 +1,5 @@
 // Deploy GridPunks.  npx hardhat run scripts/deploy.js --network robinhood
-// Env: PRIVATE_KEY (deployer), SITE_URL (e.g. https://gridpunks.vercel.app)
+// Env: PRIVATE_KEY (deployer), SITE_URL (e.g. https://gridpunks.vercel.app), PUZZLE_PASSWORD
 const fs = require("fs");
 const path = require("path");
 const crypto = require("crypto");
@@ -24,11 +24,18 @@ async function main() {
   const addr = await g.getAddress();
   console.log("\nGridPunks deployed at", addr);
 
+  // Answer addresses for the 10 zones + the Golden Punk (answers stay in the sealed file)
+  const P = require("./puzzles.js");
+  const S = await P.signers(P.open());
+  await (await g.setSigners(S.slice(0, 10), S[10])).wait();
+  console.log("Puzzle signers set for 10 zones + the Golden Punk");
+
   const cfgPath = path.join(__dirname, "..", "site", "config.json");
   const cfg = JSON.parse(fs.readFileSync(cfgPath, "utf8"));
   cfg.contract = addr;
   if (network.name === "localhost") { cfg.rpc = "http://127.0.0.1:8545"; cfg.chainId = 31337; cfg.chainName = "Localhost"; }
   fs.writeFileSync(cfgPath, JSON.stringify(cfg, null, 2) + "\n");
-  console.log("site/config.json updated. Mint is CLOSED: open it with  npx hardhat run scripts/open.js --network", network.name);
+  console.log("site/config.json updated. Mint is CLOSED and every zone is sealed.");
+  console.log("Launch day: open the mint (scripts/open.js), then release zone 0 (scripts/release.js).");
 }
 main().catch((e) => { console.error(e); process.exit(1); });

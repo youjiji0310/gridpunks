@@ -4,9 +4,12 @@
   "use strict";
   const N = 100, CELLS = 10000, PX = 24, BOARD = N * PX, MAX = 20;
   const SEL = {
-    mint: "0xf8e93ef9", grid: "0xa23836ef", totalSupply: "0x18160ddd", price: "0xa035b1fe",
+    mint: "0x038bd95a", grid: "0xa23836ef", totalSupply: "0x18160ddd", price: "0xa035b1fe",
     mintOpen: "0x24bbd049", ownerOf: "0x6352211e", provenance: "0x0f7309e8",
+    zones: "0x03d25049", solvedMask: "0x573f1e97", puzzle: "0x3ddb28ba", solveHash: "0xaf2a61d8",
+    legendPuzzle: "0x2ed033cc", legendOpenAt: "0x4f081a7c", claimLegend: "0xf6b59b11", legendSigner: "0x5d573509",
   };
+  const ZONES = 10, ZONE_SIZE = 1000, LEGEND_ID = 10000, LEGEND_ZONE = 10;
   const CLAIMED_TOPIC = "0x987d620f307ff6b94d58743cb7a7509f24071586a77759b77c2d4e29f75a2f9a";
   const ERRORS = {
     "0x589ed34b": "The mint is not open yet.",
@@ -15,6 +18,10 @@
     "0x788a686f": "Wrong amount of ETH for that many plots.",
     "0x77be85a1": "One of those plots does not exist.",
     "0x55d3ab31": "Someone just claimed one of your plots. It has been removed, try again.",
+    "0x72bfb59a": "That zone is still locked for your wallet. Solve its puzzle first.",
+    "0x7ca55c77": "The answer proof was rejected. Check the answer again.",
+    "0xf8c3dd47": "The Golden Punk puzzle is not out yet.",
+    "0x10e2455d": "Too late: someone already claimed the Golden Punk.",
   };
 
   const $ = (id) => document.getElementById(id);
@@ -25,6 +32,20 @@
   let priceWei = 300000000000000n, mintOpen = false, preview = true;
   let account = null, wallet = null;
   let pinned = null, hover = null, busy = false;
+  // puzzle zones
+  const Z = { signer: Array(ZONES).fill(null), openAt: Array(ZONES).fill(0), publicAt: Array(ZONES).fill(0), text: Array(ZONES).fill("") };
+  const LEG = { signer: null, openAt: 0, text: "", owner: null };
+  let solvedMask = 0;                // zones this wallet proved on-chain
+  const keys = {};                   // zone -> answer key, kept in this tab only
+  const nowS = () => Math.floor(Date.now() / 1000);
+  function zoneState(z) {
+    if (!Z.openAt[z]) return "sealed";
+    return nowS() >= Z.publicAt[z] ? "public" : "live";
+  }
+  function canPick(z) {
+    const st = zoneState(z);
+    return st === "public" || (st === "live" && (((solvedMask >> z) & 1) === 1 || !!keys[z]));
+  }
 
   // ------------------------------------------------------------ board art
   const off = document.createElement("canvas");
@@ -103,6 +124,17 @@
     // every 10 plots a slightly stronger line, like a survey map
     ctx.fillStyle = "rgba(200,241,53,.10)";
     for (let i = 10; i < N; i += 10) { ctx.fillRect(i * PX - lw, 0, lw * 2, BOARD); ctx.fillRect(0, i * PX - lw, BOARD, lw * 2); }
+    // locked zones: a veil over their 10 rows and a label
+    for (let z = 0; z < ZONES; z++) {
+      if (canPick(z)) continue;
+      const y0 = z * 10 * PX, h = 10 * PX, st = zoneState(z);
+      ctx.fillStyle = st === "live" ? "rgba(11,13,16,.55)" : "rgba(11,13,16,.78)";
+      ctx.fillRect(0, y0, BOARD, h);
+      ctx.fillStyle = st === "live" ? "rgba(200,241,53,.9)" : "rgba(139,148,163,.75)";
+      ctx.font = `700 ${PX * 3.2}px "JetBrains Mono", monospace`;
+      ctx.textAlign = "center"; ctx.textBaseline = "middle";
+      ctx.fillText(st === "live" ? `ZONE ${z} · SOLVE TO ENTER` : `ZONE ${z} · SEALED`, BOARD / 2, y0 + h / 2);
+    }
     for (const c of selected) {
       const x = (c % N) * PX, y = Math.floor(c / N) * PX;
       ctx.fillStyle = cellScreen < 8 ? "#c8f135" : "rgba(200,241,53,.35)";
@@ -179,6 +211,12 @@
   function clickCell(c) {
     if (c == null) return;
     if (board[c]) { pinned = c; inspect(c, true); render(); return; }
+    const z = Math.floor(c / ZONE_SIZE);
+    if (!selected.has(c) && !canPick(z)) {
+      const st = zoneState(z);
+      setStatus(st === "sealed" ? `Zone ${z} is sealed. Its puzzle has not dropped yet.` : `Zone ${z} is locked. Solve its puzzle in the Vault below, or wait until it opens to everyone.`, "err");
+      return;
+    }
     if (selected.has(c)) selected.delete(c);
     else if (selected.size >= MAX) return setStatus(`You can claim up to ${MAX} plots per mint.`, "err");
     else selected.add(c);
@@ -205,8 +243,11 @@
     const v = board[c];
     if (!v) {
       drawQ(ictx, 240);
-      $("inspectTitle").textContent = selected.has(c) ? "In your picks" : "Unclaimed";
-      $("inspectText").textContent = selected.has(c) ? "Mint to find out who lives here." : "Someone is hiding here. Click to add this plot.";
+      const z = Math.floor(c / ZONE_SIZE), open = canPick(z);
+      $("inspectTitle").textContent = selected.has(c) ? "In your picks" : open ? "Unclaimed" : `Zone ${z} · locked`;
+      $("inspectText").textContent = selected.has(c) ? "Mint to find out who lives here."
+        : open ? "Someone is hiding here. Click to add this plot."
+        : zoneState(z) === "sealed" ? "This zone's puzzle has not dropped yet." : "Solve this zone's puzzle in the Vault to claim plots here.";
       $("inspectTraits").innerHTML = ""; return;
     }
     const t = traits[v - 1];
@@ -249,8 +290,8 @@
   $("clearSel").onclick = () => { selected.clear(); updateCart(); render(); };
   $("luckyBtn").onclick = () => {
     if (selected.size >= MAX) return setStatus(`You can claim up to ${MAX} plots per mint.`, "err");
-    const free = []; for (let i = 0; i < CELLS; i++) if (!board[i] && !selected.has(i)) free.push(i);
-    if (!free.length) return setStatus("Every plot is claimed.", "err");
+    const free = []; for (let i = 0; i < CELLS; i++) if (!board[i] && !selected.has(i) && canPick(Math.floor(i / ZONE_SIZE))) free.push(i);
+    if (!free.length) return setStatus("No open plot right now. Solve a puzzle in the Vault to unlock a zone.", "err");
     const c = free[Math.floor(Math.random() * free.length)];
     selected.add(c); updateCart(); centerOn(c, Math.max(PX * scale, 40)); inspect(c);
   };
@@ -281,8 +322,9 @@
   }
   function decodeString(hex) {
     const h = hex.slice(2), len = parseInt(h.slice(64, 128), 16), bytes = h.slice(128, 128 + len * 2);
-    let s = ""; for (let i = 0; i < bytes.length; i += 2) s += String.fromCharCode(parseInt(bytes.slice(i, i + 2), 16));
-    return s;
+    const u8 = new Uint8Array(bytes.length / 2);
+    for (let i = 0; i < u8.length; i++) u8[i] = parseInt(bytes.slice(i * 2, i * 2 + 2), 16);
+    return new TextDecoder().decode(u8); // puzzle texts are UTF-8 (·, emoji…)
   }
 
   async function refresh() {
@@ -291,6 +333,7 @@
       const [g, ts, pr, open] = await Promise.all([call(SEL.grid), call(SEL.totalSupply), call(SEL.price), call(SEL.mintOpen)]);
       priceWei = BigInt(pr); mintOpen = BigInt(open) === 1n;
       applyGrid(g);
+      await refreshZones();
       $("claimed").textContent = Number(BigInt(ts)).toLocaleString("en-US");
       ["priceLabel", "priceLabel2"].forEach((id) => ($(id).textContent = fmtEth(priceWei)));
       updateCart();
@@ -326,8 +369,8 @@
       account = accs[0];
       await ensureChain();
       const b = $("connect"); b.textContent = short(account); b.classList.add("connected");
-      wallet.on && wallet.on("accountsChanged", (a) => { account = a[0] || null; $("connect").textContent = account ? short(account) : "Connect wallet"; updateCart(); });
-      setStatus(""); updateCart(); return true;
+      wallet.on && wallet.on("accountsChanged", (a) => { account = a[0] || null; $("connect").textContent = account ? short(account) : "Connect wallet"; refreshZones(); updateCart(); });
+      setStatus(""); await refreshZones(); updateCart(); return true;
     } catch (e) { setStatus(e.code === 4001 ? "Connection cancelled." : (e.message || "Could not connect."), "err"); return false; }
   }
   async function ensureChain() {
@@ -356,11 +399,20 @@
     if (preview) return previewMint();
     if (!account && !(await connect())) return;
     const cells = [...selected].sort((a, b) => a - b);
-    const data = SEL.mint + word(32) + word(cells.length) + cells.map(word).join("");
+    const need = [...new Set(cells.map((c) => Math.floor(c / ZONE_SIZE)))].filter((z) => zoneState(z) === "live" && ((solvedMask >> z) & 1) === 0);
+    if (need.length > 1) return setStatus(`Your picks need ${need.length} new puzzle proofs. Mint one newly solved zone at a time (zones ${need.join(", ")}).`, "err");
     const value = "0x" + (priceWei * BigInt(cells.length)).toString(16);
     busy = true; updateCart();
     try {
       await ensureChain();
+      let proof = "0x", pzone = 0;
+      if (need.length) {
+        pzone = need[0];
+        if (!keys[pzone]) throw new Error(`Solve zone ${pzone}'s puzzle first.`);
+        setStatus(`Signing your zone ${pzone} answer…`);
+        proof = await signProof(pzone);
+      }
+      const data = encodeMint(cells, pzone, proof);
       setStatus("Checking your plots are still free…");
       try { await rpc("eth_call", [{ from: account, to: cfg.contract, data, value }, "latest"]); }
       catch (e) {
@@ -378,6 +430,7 @@
         .map((l) => ({ cell: parseInt(l.topics[2], 16), punk: parseInt(l.data, 16) }));
       found.forEach((f) => { board[f.cell] = f.punk + 1; drawCell(f.cell); selected.delete(f.cell); });
       setStatus(`Claimed ${found.length} plot${found.length > 1 ? "s" : ""}.`, "ok");
+      if (need.length) solvedMask |= 1 << need[0];
       showReveal(found); render(); refresh();
     } catch (e) { setStatus(revertMessage(e), "err"); }
     finally { busy = false; updateCart(); }
@@ -411,6 +464,153 @@
   $("reveal").addEventListener("click", (e) => { if (e.target.id === "reveal") $("reveal").hidden = true; });
   document.addEventListener("keydown", (e) => { if (e.key === "Escape") $("reveal").hidden = true; });
 
+  // ------------------------------------------------------------ the Vault (puzzles)
+  function encodeBytes(hex) {
+    const h = hex.replace(/^0x/, ""), len = h.length / 2;
+    return word(len) + h.padEnd(Math.ceil(h.length / 64) * 64, "0");
+  }
+  function encodeMint(cells, zone, proof) {
+    const proofOffset = 96 + 32 * (1 + cells.length);
+    return SEL.mint + word(96) + word(zone) + word(proofOffset) + word(cells.length) + cells.map(word).join("") + encodeBytes(proof);
+  }
+  async function signProof(zone) {
+    const hash = await call(SEL.solveHash + word(zone) + account.slice(2).toLowerCase().padStart(64, "0"));
+    return new ethers.Wallet(keys[zone]).signMessage(ethers.getBytes(hash));
+  }
+  function remember(zone, key) {
+    keys[zone] = key;
+    try { sessionStorage.setItem("gp-key-" + (cfg.contract || "preview") + "-" + zone, key); } catch (_) {}
+  }
+  function recall() {
+    for (let z = 0; z <= LEGEND_ZONE; z++) {
+      try { const k = sessionStorage.getItem("gp-key-" + (cfg.contract || "preview") + "-" + z); if (k) keys[z] = k; } catch (_) {}
+    }
+  }
+
+  async function refreshZones() {
+    if (preview) return renderVault();
+    try {
+      const hex = (await call(SEL.zones)).slice(2), w = (i) => hex.slice(i * 64, i * 64 + 64);
+      for (let z = 0; z < ZONES; z++) {
+        Z.signer[z] = "0x" + w(z).slice(24);
+        Z.openAt[z] = parseInt(w(10 + z), 16);
+        Z.publicAt[z] = parseInt(w(20 + z), 16);
+        if (Z.openAt[z] && !Z.text[z]) Z.text[z] = decodeString(await call(SEL.puzzle + word(z)));
+      }
+      LEG.openAt = parseInt(await call(SEL.legendOpenAt), 16);
+      if (LEG.openAt && !LEG.text) LEG.text = decodeString(await call(SEL.legendPuzzle));
+      if (!LEG.signer) LEG.signer = "0x" + (await call(SEL.legendSigner)).slice(-40);
+      try { const o = await call(SEL.ownerOf + word(LEGEND_ID)); LEG.owner = "0x" + o.slice(-40); } catch (_) { LEG.owner = null; }
+      if (account) solvedMask = parseInt(await call(SEL.solvedMask + account.slice(2).toLowerCase().padStart(64, "0")), 16);
+    } catch (e) { console.warn("zones refresh failed", e); }
+    renderVault(); render();
+  }
+
+  function fmtLeft(sec) {
+    if (sec <= 0) return "now";
+    const h = Math.floor(sec / 3600), m = Math.floor((sec % 3600) / 60), s2 = sec % 60;
+    return h ? `${h}h ${String(m).padStart(2, "0")}m` : `${m}m ${String(s2).padStart(2, "0")}s`;
+  }
+  function esc(t) { return String(t).replace(/[&<>"]/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c])); }
+
+  let vaultBuilt = false;
+  function buildVault() {
+    const list = $("zoneList"); list.innerHTML = "";
+    for (let z = 0; z < ZONES; z++) {
+      const li = document.createElement("li"); li.className = "zone"; li.id = "zone-" + z;
+      li.innerHTML = `<div class="zone-head"><span class="zone-name">Zone ${z}</span><span class="zone-rows num">rows ${z * 10}–${z * 10 + 9}</span><span class="pill" data-pill></span></div>
+        <pre class="riddle" data-text hidden></pre>
+        <form class="answer" data-form hidden autocomplete="off"><label class="sr" for="ans-${z}">Answer for zone ${z}</label>
+          <input id="ans-${z}" type="text" placeholder="Your answer" spellcheck="false" autocapitalize="off">
+          <button class="btn btn-line btn-xs" type="submit">Check</button></form>
+        <p class="zone-msg small" data-msg></p>`;
+      li.querySelector("form").addEventListener("submit", (e) => { e.preventDefault(); checkAnswer(z, li.querySelector("input").value); });
+      list.appendChild(li);
+    }
+    $("legendForm").addEventListener("submit", (e) => { e.preventDefault(); checkAnswer(LEGEND_ZONE, $("legendInput").value); });
+    $("legendClaim").onclick = claimLegend;
+    G.drawLegend($("legendArt").getContext("2d"), 240);
+    vaultBuilt = true;
+  }
+
+  function renderVault() {
+    if (!vaultBuilt) buildVault();
+    let live = 0, solved = 0;
+    for (let z = 0; z < ZONES; z++) {
+      const li = $("zone-" + z), st = zoneState(z), mine = ((solvedMask >> z) & 1) === 1 || !!keys[z];
+      li.dataset.state = mine && st !== "public" ? "solved" : st;
+      const pill = li.querySelector("[data-pill]");
+      pill.textContent = st === "sealed" ? "Sealed" : st === "public" ? "Open to all" : mine ? "Solved ✓" : `Public in ${fmtLeft(Z.publicAt[z] - nowS())}`;
+      const txt = li.querySelector("[data-text]");
+      txt.hidden = !Z.text[z]; txt.textContent = Z.text[z].replace(/^Zone \d+ · /, "");
+      li.querySelector("[data-form]").hidden = !(st === "live" && !mine);
+      if (st === "live") live++;
+      if (mine) solved++;
+      const msg = li.querySelector("[data-msg]");
+      if (st === "sealed") msg.textContent = "The puzzle drops on X and here.";
+      else if (st === "public") msg.textContent = "Anyone can claim plots here now.";
+      else if (mine) msg.textContent = "Your wallet holds the key. Pick plots in this zone and mint.";
+      else if (!msg.dataset.keep) msg.textContent = "";
+    }
+    $("vaultLive").textContent = live;
+    $("vaultSolved").textContent = solved;
+    // Golden Punk
+    const lState = LEG.owner ? "claimed" : LEG.openAt ? "live" : "sealed";
+    $("legend").dataset.state = lState;
+    $("legendPill").textContent = lState === "claimed" ? "Claimed" : lState === "live" ? "Live" : "Sealed";
+    $("legendText").hidden = !LEG.text; $("legendText").textContent = LEG.text.replace(/^The Golden Punk\s*/, "");
+    $("legendForm").hidden = lState !== "live" || !!keys[LEGEND_ZONE];
+    $("legendClaim").hidden = lState !== "live" || !keys[LEGEND_ZONE];
+    if (lState === "claimed") $("legendMsg").innerHTML = `Owned by <a class="num" href="${cfg.explorer}/address/${LEG.owner}" target="_blank" rel="noopener">${short(LEG.owner)}</a>.`;
+    else if (lState === "sealed") $("legendMsg").textContent = "The final puzzle drops after the last zone. The first wallet to solve it takes the Golden Punk for free.";
+  }
+
+  async function checkAnswer(zone, answer) {
+    const isLegend = zone === LEGEND_ZONE;
+    const msg = isLegend ? $("legendMsg") : $("zone-" + zone).querySelector("[data-msg]");
+    if (!GAnswer.normalize(answer)) { msg.textContent = "Type an answer first."; return; }
+    msg.dataset.keep = "1"; msg.className = (isLegend ? "" : "zone-msg ") + "small"; msg.textContent = "Checking… (this takes a second on purpose)";
+    try {
+      const key = await GAnswer.deriveKey(answer, zone);
+      const addr = new ethers.Wallet(key).address.toLowerCase();
+      const want = (isLegend ? LEG.signer : Z.signer[zone] || "").toLowerCase();
+      if (addr !== want) { msg.textContent = "Not it. Keep digging."; msg.classList.add("err"); return; }
+      remember(zone, key);
+      msg.classList.add("ok");
+      msg.textContent = isLegend ? "Correct. Claim the Golden Punk before anyone else does." : `Correct! Zone ${zone} is unlocked for you. Pick plots there and mint.`;
+      delete msg.dataset.keep;
+      renderVault(); render(); updateCart();
+      if (!isLegend) centerOn(zone * ZONE_SIZE + 450, Math.max(PX * scale, 10));
+    } catch (e) { msg.textContent = "Could not check: " + e.message; msg.classList.add("err"); }
+  }
+
+  async function claimLegend() {
+    if (busy) return;
+    if (preview) { $("legendMsg").textContent = "Preview only: at launch this button claims token #10000 for free."; return; }
+    if (!account && !(await connect())) return;
+    busy = true; const b = $("legendClaim"); b.disabled = true;
+    try {
+      await ensureChain();
+      $("legendMsg").textContent = "Signing your answer…";
+      const hash = await call(SEL.solveHash + word(LEGEND_ZONE) + account.slice(2).toLowerCase().padStart(64, "0"));
+      const proof = await new ethers.Wallet(keys[LEGEND_ZONE]).signMessage(ethers.getBytes(hash));
+      const data = SEL.claimLegend + word(32) + encodeBytes(proof);
+      await rpc("eth_call", [{ from: account, to: cfg.contract, data }, "latest"]);
+      $("legendMsg").textContent = "Confirm in your wallet…";
+      const tx = await wallet.request({ method: "eth_sendTransaction", params: [{ from: account, to: cfg.contract, data }] });
+      $("legendMsg").textContent = "Sent. Waiting for the block…";
+      let rc = null;
+      for (let i = 0; i < 120 && !rc; i++) { rc = await rpc("eth_getTransactionReceipt", [tx]).catch(() => null); if (!rc) await new Promise((r) => setTimeout(r, 1000)); }
+      if (!rc || rc.status !== "0x1") throw new Error("The claim did not go through.");
+      LEG.owner = account; renderVault();
+      $("legendMsg").textContent = "The Golden Punk is yours. 🏆";
+    } catch (e) { $("legendMsg").textContent = revertMessage(e); }
+    finally { busy = false; b.disabled = false; }
+  }
+  setInterval(() => { if (vaultBuilt) { renderVault(); } }, 1000);
+  let lastMask = "";
+  setInterval(() => { const m = Array.from({ length: ZONES }, (_, z) => canPick(z) ? 1 : 0).join(""); if (m !== lastMask) { lastMask = m; render(); } }, 1000);
+
   // ------------------------------------------------------------ boot
   async function sha256Hex(text) {
     const buf = await crypto.subtle.digest("SHA-256", new TextEncoder().encode(text));
@@ -428,10 +628,17 @@
     $("contractLink").href = preview ? "#" : `${cfg.explorer}/address/${cfg.contract}`;
     const bctx = $("brandPunk").getContext("2d"); G.drawCanvas(bctx, traits[42], 24);
 
+    recall();
     if (preview) {
+      // Demo vault: zone 0 open to all, zone 1 live with a sample puzzle, the rest sealed
+      Z.openAt[0] = 1; Z.publicAt[0] = 1;
+      Z.openAt[1] = nowS(); Z.publicAt[1] = nowS() + 20 * 3600;
+      Z.text[1] = "Zone 1 · Preview puzzle\n\nThis is a sample. At launch the real puzzle shows here.\nType the name of this collection to try the lock.";
+      GAnswer.deriveKey("gridpunks", 1).then((k) => { Z.signer[1] = new ethers.Wallet(k).address; });
+      renderVault();
       // Demo board so the page can be judged before deploy: a few hundred scattered claims
       let s = 7; const rnd = () => ((s = (s * 16807) % 2147483647) / 2147483647);
-      for (let i = 0; i < 700; i++) { const c = Math.floor(rnd() * CELLS); if (!board[c]) board[c] = Math.floor(rnd() * CELLS) + 1; }
+      for (let i = 0; i < 700; i++) { const c = Math.floor(rnd() * 2000); if (!board[c]) board[c] = Math.floor(rnd() * CELLS) + 1; }
       $("claimed").textContent = board.filter(Boolean).length.toLocaleString("en-US") + " (demo)";
     }
     drawAll(); resize(); inspect(null); updateCart();

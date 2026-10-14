@@ -51,6 +51,42 @@ site/                     site statique + fonction metadata (déployer ce dossie
    npx hardhat run scripts/withdraw.js --network robinhood
    ```
 
+## Les énigmes (The Vault)
+
+La grille est coupée en **10 zones** de 10 lignes (zone = case / 1000). Chaque zone est scellée par une énigme.
+
+- Celui qui résout l'énigme minte tout de suite dans la zone ; les autres attendent 24 h (réglable).
+- La réponse ne quitte jamais le navigateur : elle devient (PBKDF2) une clé privée qui signe l'adresse du joueur. Le contrat ne connaît que l'adresse publique : copier la transaction de quelqu'un ne sert à rien.
+- Une 11e énigme, publiée après la dernière zone, débloque le **Golden Punk** (token #10000, 1 sur 1), gratuit pour le premier qui la résout.
+- Les réponses sont dans `puzzles/puzzles.enc.json`, chiffré (scrypt + AES-256-GCM). Le mot de passe va dans `.env` → `PUZZLE_PASSWORD`. Ne le partage jamais et ne commit jamais `.env`.
+
+| Zone | Énigme | Type |
+|---|---|---|
+| 0 | The Front Page | ROT13 (facile) |
+| 1 | Two Coats of Paint | Base64 + hex |
+| 2 | The First Tweet | Vigenère |
+| 3 | Read Me Down | Acrostiche |
+| 4 | Dots and Dashes | Morse |
+| 5 | Ones and Zeros | Binaire |
+| 6 | Aleph Meets Tav | Atbash |
+| 7 | The Nine Pages | Whitepaper Bitcoin |
+| 8 | Hungry Shift | César + Bitcoin Pizza Day |
+| 9 | Three Spells | 3 couches |
+| ★ | The Golden Punk | utilise les 10 réponses |
+
+Voir les réponses (pour toi seul) : `node scripts/puzzles.js --answers`
+
+### Jour du lancement
+
+```
+npx hardhat run scripts/open.js --network robinhood                 # ouvre le mint
+ZONE=0 HOURS=24 npx hardhat run scripts/release.js --network robinhood   # publie l'énigme 0
+```
+PowerShell : `$env:ZONE="0"; $env:HOURS="24"; npx hardhat run scripts/release.js --network robinhood`
+
+Le script affiche le texte à poster sur X. Publie une zone par jour (0 → 9), puis `ZONE=legend` pour le Golden Punk.
+Si une énigme reste bloquée trop longtemps, ouvre la zone à tous plus tôt avec `setZonePublicAt`.
+
 ## OpenSea
 
 OpenSea supporte Robinhood Chain. La collection apparaît d'elle-même après le premier mint (ERC-721 standard + `tokenURI` + `contractURI`).
@@ -61,7 +97,7 @@ Si une image ou des traits ne s'affichent pas : bouton « Refresh metadata » su
 
 | Action | Gas |
 |---|---|
-| Déploiement | ~1 880 000 |
+| Déploiement | à remesurer (contrat plus gros avec les énigmes) |
 | Mint 1 case | ~168 000 |
 | Mint 20 cases | ~1 150 000 |
 

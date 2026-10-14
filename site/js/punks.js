@@ -267,6 +267,40 @@
     return ORDER.map((k, i) => ({ trait_type: k === "bg" ? "Background" : k === "face" ? "Face" : k.charAt(0).toUpperCase() + k.slice(1), value: TRAITS[k][t[i]].name }));
   }
 
-  const api = { TRAITS, ORDER, pixels, svg, drawCanvas, attributes };
+  // ---------------------------------------------------------- the Golden Punk (token 10000)
+  // One-of-one: a crowned neon punk with laser eyes, every pixel recast in gold.
+  const LEGEND_TRAITS = [6, 0, 11, 6, 4, 6, 2];
+  const GOLD = ["#3a2606", "#6b4a0c", "#9c6f16", "#c99a2a", "#e8c25a", "#fbe7a1", "#fff8dc"];
+  function lum(hex) {
+    const n = parseInt(hex.slice(1), 16);
+    return (0.299 * (n >> 16) + 0.587 * ((n >> 8) & 255) + 0.114 * (n & 255)) / 255;
+  }
+  function legendPixels() {
+    return pixels(LEGEND_TRAITS).map((c) => {
+      if (!c) return null;
+      if (c === "#ff3b3b" || c === "#ff7a7a" || c === "#ffd1d1") return c; // keep the laser red
+      return GOLD[Math.min(GOLD.length - 1, Math.floor(lum(c) * GOLD.length))];
+    });
+  }
+  function legendSvg(size) {
+    const p = legendPixels();
+    let s = '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" shape-rendering="crispEdges"' + (size ? ' width="' + size + '" height="' + size + '"' : "") + '><rect width="24" height="24" fill="#120d04"/>';
+    for (let i = 0; i < 24; i += 4) s += '<rect x="' + i + '" width="1" height="24" fill="#2a1e08"/><rect y="' + i + '" width="24" height="1" fill="#2a1e08"/>';
+    p.forEach((c, i) => { if (c) s += '<rect x="' + (i % 24) + '" y="' + Math.floor(i / 24) + '" width="1" height="1" fill="' + c + '"/>'; });
+    return s + "</svg>";
+  }
+  function drawLegend(ctx, size) {
+    const k = size / 24;
+    ctx.imageSmoothingEnabled = false;
+    ctx.fillStyle = "#120d04"; ctx.fillRect(0, 0, size, size);
+    ctx.fillStyle = "#2a1e08"; for (let i = 0; i < 24; i += 4) { ctx.fillRect(i * k, 0, k, size); ctx.fillRect(0, i * k, size, k); }
+    legendPixels().forEach((c, i) => { if (c) { ctx.fillStyle = c; ctx.fillRect((i % 24) * k, Math.floor(i / 24) * k, Math.ceil(k), Math.ceil(k)); } });
+  }
+  function legendAttributes() {
+    return [{ trait_type: "Type", value: "Golden" }, { trait_type: "Edition", value: "1 of 1" },
+      ...attributes(LEGEND_TRAITS).filter((a) => a.trait_type !== "Type" && a.trait_type !== "Background" && a.value !== "None")];
+  }
+
+  const api = { TRAITS, ORDER, pixels, svg, drawCanvas, attributes, legendSvg, drawLegend, legendAttributes };
   if (typeof module !== "undefined" && module.exports) module.exports = api; else root.GPunks = api;
 })(typeof window !== "undefined" ? window : globalThis);
