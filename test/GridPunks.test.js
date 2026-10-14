@@ -6,7 +6,7 @@ const PRICE = ethers.parseEther("0.0003");
 async function deploy() {
   const [owner, alice, bob] = await ethers.getSigners();
   const G = await ethers.getContractFactory("GridPunks");
-  const g = await G.deploy("https://example.app/meta/", "abc123", owner.address);
+  const g = await G.deploy("https://example.app/meta/", "https://example.app/api/collection", "abc123", owner.address);
   return { g, owner, alice, bob };
 }
 
@@ -29,6 +29,7 @@ describe("GridPunks", () => {
     expect(m2).to.equal(false);
     await expect(g.connect(bob).mint([4242], { value: PRICE })).to.be.revertedWithCustomError(g, "CellTaken");
     expect(await g.tokenURI(4242)).to.equal("https://example.app/meta/4242");
+    expect(await g.contractURI()).to.equal("https://example.app/api/collection");
   });
 
   it("rejects wrong payment, bad counts, bad cells, duplicate cells in one tx", async () => {

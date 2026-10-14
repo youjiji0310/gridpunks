@@ -12,13 +12,14 @@ async function main() {
   const traitsPath = path.join(__dirname, "..", "site", "data", "traits.json");
   const provenance = crypto.createHash("sha256").update(fs.readFileSync(traitsPath)).digest("hex");
   const base = (site || "http://localhost:3000") + "/api/meta/";
+  const collection = (site || "http://localhost:3000") + "/api/collection";
 
   console.log("Network   :", network.name, "| deployer", me.address);
   console.log("Balance   :", ethers.formatEther(await ethers.provider.getBalance(me.address)), "ETH");
   console.log("Base URI  :", base);
   console.log("Provenance:", provenance);
 
-  const g = await (await ethers.getContractFactory("GridPunks")).deploy(base, provenance, me.address);
+  const g = await (await ethers.getContractFactory("GridPunks")).deploy(base, collection, provenance, me.address);
   await g.waitForDeployment();
   const addr = await g.getAddress();
   console.log("\nGridPunks deployed at", addr);

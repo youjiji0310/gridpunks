@@ -20,6 +20,7 @@ scripts/generate.js       régénère traits.json (node scripts/generate.js <see
 site/                     site statique + fonction metadata (déployer ce dossier sur Vercel)
   config.json             contract, rpc, chainId… (rempli automatiquement par deploy.js)
   api/meta/[id].js        tokenURI : lit la case on-chain et renvoie le JSON + l'image SVG
+  api/collection.js       contractURI : nom, image et royalties de la collection (OpenSea)
 ```
 
 ## Lancement (dans l'ordre)
@@ -49,6 +50,12 @@ site/                     site statique + fonction metadata (déployer ce dossie
    ```
    npx hardhat run scripts/withdraw.js --network robinhood
    ```
+
+## OpenSea
+
+OpenSea supporte Robinhood Chain. La collection apparaît d'elle-même après le premier mint (ERC-721 standard + `tokenURI` + `contractURI`).
+Ensuite, connecte le wallet de déploiement sur OpenSea pour revendiquer la collection (logo, bannière, liens, royalties).
+Si une image ou des traits ne s'affichent pas : bouton « Refresh metadata » sur l'item.
 
 ## Coûts mesurés (tests locaux)
 

@@ -21,6 +21,7 @@ contract GridPunks is ERC721, ERC2981, Ownable {
     string public provenance;
 
     string private _base;
+    string private _contractURI;
     uint256 private _nonce;
     // Lazy Fisher-Yates over punk indexes 0..9999 (value stored +1, 0 = untouched)
     mapping(uint256 => uint256) private _swap;
@@ -36,11 +37,12 @@ contract GridPunks is ERC721, ERC2981, Ownable {
     error BadCell(uint256 cell);
     error CellTaken(uint256 cell);
 
-    constructor(string memory base, string memory provenanceHash, address royaltyReceiver)
+    constructor(string memory base, string memory collectionURI, string memory provenanceHash, address royaltyReceiver)
         ERC721("GridPunks", "GRID")
         Ownable(msg.sender)
     {
         _base = base;
+        _contractURI = collectionURI;
         provenance = provenanceHash;
         _setDefaultRoyalty(royaltyReceiver, 1000); // 10%
     }
@@ -109,6 +111,9 @@ contract GridPunks is ERC721, ERC2981, Ownable {
         return string.concat(_base, _toString(cell));
     }
 
+    /// @notice Collection-level metadata (name, image, description) read by OpenSea and other marketplaces.
+    function contractURI() external view returns (string memory) { return _contractURI; }
+
     function supportsInterface(bytes4 id) public view override(ERC721, ERC2981) returns (bool) {
         return super.supportsInterface(id);
     }
@@ -118,6 +123,7 @@ contract GridPunks is ERC721, ERC2981, Ownable {
     function setMintOpen(bool open) external onlyOwner { mintOpen = open; }
     function setPrice(uint256 p) external onlyOwner { price = p; }
     function setBaseURI(string calldata b) external onlyOwner { _base = b; }
+    function setContractURI(string calldata u) external onlyOwner { _contractURI = u; }
     function setRoyalty(address to, uint96 bps) external onlyOwner { _setDefaultRoyalty(to, bps); }
 
     function withdraw(address payable to) external onlyOwner {
