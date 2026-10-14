@@ -30,7 +30,7 @@ site/                     site statique + fonction metadata (déployer ce dossie
    npm install
    npx hardhat test
    ```
-2. **Site sur Vercel d'abord** (il faut son URL pour le tokenURI) : déploie le dossier `site/` (Root Directory = `site`). Sans adresse de contrat, le site tourne en mode preview avec des cases de démo.
+2. **Site sur Vercel d'abord** (il faut son URL pour le tokenURI) : importe le repo tel quel, sans rien changer (le `vercel.json` à la racine sert le dossier `site/` et les fonctions `/api`). Sans adresse de contrat, le site tourne en mode preview avec des cases de démo.
 3. **Wallet de déploiement** : crée un wallet neuf, mets-y un peu d'ETH sur Robinhood Chain (le déploiement consomme ~1.9 M gas, quelques centimes sur L2).
 4. **.env**
    ```

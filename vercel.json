@@ -1,0 +1,10 @@
+{
+  "installCommand": "echo skip install",
+  "buildCommand": "echo no build",
+  "outputDirectory": "site",
+  "cleanUrls": true,
+  "headers": [
+    { "source": "/data/(.*)", "headers": [{ "key": "Cache-Control", "value": "public, max-age=3600" }] },
+    { "source": "/config.json", "headers": [{ "key": "Cache-Control", "value": "no-store" }] }
+  ]
+}
