@@ -46,7 +46,7 @@ module.exports = async (req, res) => {
     const punk = Number(BigInt("0x" + j.result.slice(66, 130)));
     const t = traits[punk];
     const x = id % N, y = Math.floor(id / N);
-    const svg = G.svg(t, { size: 960 });
+    const svg = G.animatedSvg(t, { size: 960, seed: punk }); // dots that gather into the punk, looping
     res.setHeader("Cache-Control", "public, s-maxage=31536000, immutable");
     return res.status(200).json({
       name: `${cfg.name} (${x}, ${y})`,

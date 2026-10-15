@@ -452,8 +452,9 @@
     const g = $("revealGrid"); g.innerHTML = "";
     found.forEach((f, i) => {
       const fig = document.createElement("figure"); fig.style.animationDelay = `${i * 90}ms`;
-      const c = document.createElement("canvas"); c.width = c.height = 240;
-      G.drawCanvas(c.getContext("2d"), traits[f.punk], 240);
+      // the punk assembles from drifting dots, like the NFT itself
+      const c = document.createElement("img"); c.width = c.height = 240; c.alt = `Punk ${f.punk}`;
+      c.src = URL.createObjectURL(new Blob([G.animatedSvg(traits[f.punk], { seed: f.punk, reveal: true })], { type: "image/svg+xml" }));
       const cap = document.createElement("figcaption"); cap.textContent = `Plot ${f.cell % N},${Math.floor(f.cell / N)} · Punk ${f.punk}`;
       fig.append(c, cap); g.append(fig);
     });

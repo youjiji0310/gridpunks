@@ -140,7 +140,7 @@ h3 { font-size: 20px; font-weight: 700; }
 .reveal-card { width: min(640px, 100%); max-height: 90vh; overflow: auto; background: var(--table); border: 1px solid var(--lime-deep); border-radius: 12px; padding: 24px; text-align: center; }
 .reveal-grid { display: flex; flex-wrap: wrap; justify-content: center; gap: 14px; margin: 20px 0 24px; }
 .reveal-grid figure { margin: 0; width: 120px; animation: pop .5s cubic-bezier(.2, 1.4, .4, 1) both; }
-.reveal-grid canvas { width: 120px; height: 120px; image-rendering: pixelated; border-radius: 8px; display: block; }
+.reveal-grid canvas, .reveal-grid img { width: 120px; height: 120px; image-rendering: pixelated; border-radius: 8px; display: block; }
 .reveal-grid figcaption { font: 12px var(--mono); color: var(--dim); margin-top: 6px; }
 @keyframes pop { from { transform: scale(.6); opacity: 0; } }
 @media (prefers-reduced-motion: reduce) { .reveal-grid figure { animation: none; } html { scroll-behavior: auto; } }

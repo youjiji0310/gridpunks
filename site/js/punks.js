@@ -254,6 +254,55 @@
     return s + "</svg>";
   }
 
+  /* Living punk: every pixel is a dot that drifts across the canvas, then the dots
+   * fly home and lock into the punk. Loop (PERIOD s): punk holds, bursts into dots,
+   * dots drift, dots gather back into the punk.  Pure SVG + CSS, so it plays in an
+   * <img>, on OpenSea and in wallets. A still frame (no animation) shows the punk.
+   * opts.seed  number that fixes the dot paths (use the punk number)
+   * opts.reveal true = start from scattered dots (for a mint reveal)            */
+  const PERIOD = 9;
+  function rng(seed) {
+    let a = (seed * 2654435761 + 1013904223) >>> 0;
+    return function () {
+      a = (a + 0x6d2b79f5) | 0;
+      let r = Math.imul(a ^ (a >>> 15), 1 | a);
+      r = (r + Math.imul(r ^ (r >>> 7), 61 | r)) ^ r;
+      return ((r ^ (r >>> 14)) >>> 0) / 4294967296;
+    };
+  }
+  const f2 = (v) => Math.round(v * 100) / 100;
+  function bgSvg(t) {
+    const bg = TRAITS.bg[t[1]];
+    if (t[1] === 5) return '<rect width="12" height="24" fill="' + bg.c + '"/><rect x="12" width="12" height="24" fill="' + bg.c2 + '"/>';
+    let s = '<rect width="24" height="24" fill="' + bg.c + '"/>';
+    for (let i = 0; i < 24; i += 4) s += '<rect x="' + i + '" width="1" height="24" fill="' + bg.c2 + '" opacity=".5"/><rect y="' + i + '" width="24" height="1" fill="' + bg.c2 + '" opacity=".5"/>';
+    return s;
+  }
+  // One shared CSS timeline; each dot only carries its own path (--a,--b burst, --c,--e drift).
+  // hold punk 0-34% -> burst into small dots 46% -> drift 66% -> gather home 86% -> hold
+  const ANIM_CSS = "<style>.d{transform-box:fill-box;transform-origin:center;animation:f " + PERIOD + "s cubic-bezier(.4,0,.2,1) infinite}" +
+    "@keyframes f{0%,34%{transform:none;rx:0}46%{transform:translate(var(--a),var(--b)) scale(.42);rx:.5px}" +
+    "66%{transform:translate(var(--c),var(--e)) scale(.42);rx:.5px}86%,100%{transform:none;rx:0}}" +
+    "@media (prefers-reduced-motion:reduce){.d{animation:none}}</style>";
+  function animatedSvg(t, opts) {
+    opts = opts || {};
+    const p = pixels(t), rand = rng((opts.seed || 0) + 7919);
+    let s = '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" shape-rendering="crispEdges"' + (opts.size ? ' width="' + opts.size + '" height="' + opts.size + '"' : "") + ">" + ANIM_CSS + bgSvg(t);
+    for (let i = 0; i < p.length; i++) {
+      const c = p[i]; if (!c) continue;
+      const x = i % N, y = Math.floor(i / N);
+      // burst point: pushed outward from the face centre, plus noise
+      const ang = Math.atan2(y - 12, x - 12) + (rand() - .5) * 1.6, dist = 4 + rand() * 9;
+      const bx = f2(12 + Math.cos(ang) * dist - x + (rand() - .5) * 3), by = f2(12 + Math.sin(ang) * dist - y + (rand() - .5) * 3);
+      // drift point: a little further along a random path
+      const dx = f2(bx + (rand() - .5) * 5), dy = f2(by + (rand() - .5) * 5);
+      const delay = f2(rand() * .7);
+      const begin = opts.reveal ? f2(-PERIOD * .5 - delay) : f2(-delay);
+      s += '<rect class="d" x="' + x + '" y="' + y + '" width="1" height="1" fill="' + c + '" style="--a:' + bx + 'px;--b:' + by + 'px;--c:' + dx + 'px;--e:' + dy + 'px;animation-delay:' + begin + 's"/>';
+    }
+    return s + "</svg>";
+  }
+
   function drawCanvas(ctx, t, size) {
     const bg = TRAITS.bg[t[1]], k = size / 24;
     ctx.imageSmoothingEnabled = false;
@@ -301,6 +350,6 @@
       ...attributes(LEGEND_TRAITS).filter((a) => a.trait_type !== "Type" && a.trait_type !== "Background" && a.value !== "None")];
   }
 
-  const api = { TRAITS, ORDER, pixels, svg, drawCanvas, attributes, legendSvg, drawLegend, legendAttributes };
+  const api = { TRAITS, ORDER, pixels, svg, animatedSvg, drawCanvas, attributes, legendSvg, drawLegend, legendAttributes };
   if (typeof module !== "undefined" && module.exports) module.exports = api; else root.GPunks = api;
 })(typeof window !== "undefined" ? window : globalThis);
