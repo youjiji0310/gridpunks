@@ -46,12 +46,17 @@ module.exports = async (req, res) => {
     const punk = Number(BigInt("0x" + j.result.slice(66, 130)));
     const t = traits[punk];
     const x = id % N, y = Math.floor(id / N);
-    const svg = G.animatedSvg(t, { size: 960, seed: punk }); // dots that gather into the punk, looping
+    const still = G.svg(t, { size: 960 }); // thumbnails: the punk itself
+    // item page: dots that drift and gather into the punk, looping (OpenSea plays animation_url in a frame)
+    const live = G.animatedSvg(t, { seed: punk });
+    const html = '<!doctype html><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">' +
+      '<style>html,body{margin:0;height:100%;background:#000}svg{display:block;width:100vmin;height:100vmin;margin:auto;position:absolute;inset:0}</style>' + live;
     res.setHeader("Cache-Control", "public, s-maxage=31536000, immutable");
     return res.status(200).json({
       name: `${cfg.name} (${x}, ${y})`,
       description: `Plot ${x},${y} of the ${cfg.name} grid on Robinhood Chain. Punk ${punk} lives here.`,
-      image: "data:image/svg+xml;base64," + Buffer.from(svg).toString("base64"),
+      image: "data:image/svg+xml;base64," + Buffer.from(still).toString("base64"),
+      animation_url: "data:text/html;base64," + Buffer.from(html).toString("base64"),
       external_url: host ? `https://${host}/#board` : undefined,
       attributes: [
         { trait_type: "Zone", value: Math.floor(id / 1000), display_type: "number" },
