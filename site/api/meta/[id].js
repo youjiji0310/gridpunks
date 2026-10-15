@@ -54,7 +54,7 @@ module.exports = async (req, res) => {
     res.setHeader("Cache-Control", "public, s-maxage=31536000, immutable");
     return res.status(200).json({
       name: `${cfg.name} (${x}, ${y})`,
-      description: `Plot ${x},${y} of the ${cfg.name} grid on Robinhood Chain. Punk ${punk} lives here.`,
+      description: `Plot ${x},${y} of the ${cfg.name} grid on Ink. Punk ${punk} lives here.`,
       image: "data:image/svg+xml;base64," + Buffer.from(still).toString("base64"),
       animation_url: "data:text/html;base64," + Buffer.from(html).toString("base64"),
       external_url: host ? `https://${host}/#board` : undefined,

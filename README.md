@@ -1,6 +1,6 @@
 # GridPunks
 
-10 000 punks pixel cachés dans une grille 100 × 100 sur **Robinhood Chain** (EVM L2, chain ID 4663).
+10 000 punks pixel cachés dans une grille 100 × 100 sur **Ink** (L2 de Kraken, OP Stack, chain ID 57073).
 L'acheteur choisit sa case, le contrat tire le punk au hasard au moment du mint et le site le révèle tout de suite.
 
 - Supply 10 000 · Prix **0.0003 ETH** par case · Max 20 cases par transaction · Royalties 10 % (ERC-2981)
@@ -31,24 +31,24 @@ site/                     site statique + fonction metadata (déployer ce dossie
    npx hardhat test
    ```
 2. **Site sur Vercel d'abord** (il faut son URL pour le tokenURI) : importe le repo tel quel, sans rien changer (le `vercel.json` à la racine sert le dossier `site/` et les fonctions `/api`). Sans adresse de contrat, le site tourne en mode preview avec des cases de démo.
-3. **Wallet de déploiement** : crée un wallet neuf, mets-y un peu d'ETH sur Robinhood Chain (le déploiement consomme ~1.9 M gas, quelques centimes sur L2).
+3. **Wallet de déploiement** : crée un wallet neuf, mets-y un peu d'ETH sur Ink (via un bridge listé sur docs.inkonchain.com). Quelques dollars suffisent pour le déploiement et les énigmes.
 4. **.env**
    ```
    cp .env.example .env    # PRIVATE_KEY + SITE_URL (ex. https://gridpunks.vercel.app)
    ```
 5. **Déployer** (le mint est fermé au départ)
    ```
-   npx hardhat run scripts/deploy.js --network robinhood
+   npx hardhat run scripts/deploy.js --network ink
    ```
    `site/config.json` reçoit l'adresse du contrat → redéploie le site sur Vercel.
-6. **Vérifier le contrat** sur robinhoodchain.blockscout.com (optionnel mais conseillé).
+6. **Vérifier le contrat** sur explorer.inkonchain.com (optionnel mais conseillé).
 7. **Test réel** : ouvre le mint, minte 1 case depuis un autre wallet, vérifie la révélation, puis `https://<site>/api/meta/<id>`.
    ```
-   npx hardhat run scripts/open.js --network robinhood
+   npx hardhat run scripts/open.js --network ink
    ```
 8. **Retirer les fonds** quand tu veux :
    ```
-   npx hardhat run scripts/withdraw.js --network robinhood
+   npx hardhat run scripts/withdraw.js --network ink
    ```
 
 ## Les énigmes (The Vault)
@@ -79,17 +79,17 @@ Voir les réponses (pour toi seul) : `node scripts/puzzles.js --answers`
 ### Jour du lancement
 
 ```
-npx hardhat run scripts/open.js --network robinhood                 # ouvre le mint
-ZONE=0 HOURS=24 npx hardhat run scripts/release.js --network robinhood   # publie l'énigme 0
+npx hardhat run scripts/open.js --network ink                 # ouvre le mint
+ZONE=0 HOURS=24 npx hardhat run scripts/release.js --network ink   # publie l'énigme 0
 ```
-PowerShell : `$env:ZONE="0"; $env:HOURS="24"; npx hardhat run scripts/release.js --network robinhood`
+PowerShell : `$env:ZONE="0"; $env:HOURS="24"; npx hardhat run scripts/release.js --network ink`
 
 Le script affiche le texte à poster sur X. Publie une zone par jour (0 → 9), puis `ZONE=legend` pour le Golden Punk.
 Si une énigme reste bloquée trop longtemps, ouvre la zone à tous plus tôt avec `setZonePublicAt`.
 
 ## OpenSea
 
-OpenSea supporte Robinhood Chain. La collection apparaît d'elle-même après le premier mint (ERC-721 standard + `tokenURI` + `contractURI`).
+OpenSea supporte Ink. La collection apparaît d'elle-même après le premier mint (ERC-721 standard + `tokenURI` + `contractURI`).
 Ensuite, connecte le wallet de déploiement sur OpenSea pour revendiquer la collection (logo, bannière, liens, royalties).
 Si une image ou des traits ne s'affichent pas : bouton « Refresh metadata » sur l'item.
 
@@ -103,8 +103,8 @@ Si une image ou des traits ne s'affichent pas : bouton « Refresh metadata » su
 
 ## Ce qu'il faut savoir
 
-- **Aléatoire** : le punk est tiré à partir du hash du bloc précédent, de l'heure, de l'adresse et d'un compteur. Les contrats ne peuvent pas minter (`msg.sender == tx.origin`), ce qui bloque l'astuce « simuler et annuler jusqu'à tomber sur un rare ». Ce n'est pas un VRF : le séquenceur de Robinhood Chain pourrait en théorie influencer le tirage. Pour un mint à 0.0003 ETH c'est acceptable ; pour plus de garanties il faudrait un oracle (Chainlink VRF ou équivalent) s'il est dispo sur la chaîne.
+- **Aléatoire** : le punk est tiré à partir du hash du bloc précédent, de l'heure, de l'adresse et d'un compteur. Les contrats ne peuvent pas minter (`msg.sender == tx.origin`), ce qui bloque l'astuce « simuler et annuler jusqu'à tomber sur un rare ». Ce n'est pas un VRF : le séquenceur d'Ink pourrait en théorie influencer le tirage. Pour un mint à 0.0003 ETH c'est acceptable ; pour plus de garanties il faudrait un oracle (Chainlink VRF ou équivalent) s'il est dispo sur la chaîne.
 - **Provenance** : le sha256 de `traits.json` est enregistré dans le contrat au déploiement ; le site l'affiche et vérifie qu'il correspond.
 - **Prix en ETH** : 0.0003 ETH ≈ 0.75 $ aujourd'hui ; modifiable avec `setPrice`.
-- **RPC** : le RPC public de Robinhood est limité en débit. Si le mint marche fort, mets un RPC dédié (Quicknode, Alchemy…) dans `site/config.json` et `RPC_URL`.
+- **RPC** : le RPC public d'Ink est limité en débit (secours : https://rpc-qnd.inkonchain.com). Si le mint marche fort, mets un RPC dédié (Quicknode, Alchemy…) dans `site/config.json` et `RPC_URL`.
 - **Nom** : « GridPunks » est provisoire ; change-le dans le contrat (avant déploiement), `site/config.json`, `index.html`.

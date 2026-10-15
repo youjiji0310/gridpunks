@@ -1,4 +1,4 @@
-// Send the mint proceeds to your wallet (or TO=0x...).  npx hardhat run scripts/withdraw.js --network robinhood
+// Send the mint proceeds to your wallet (or TO=0x...).  npx hardhat run scripts/withdraw.js --network ink
 const { ethers } = require("hardhat");
 const cfg = require("../site/config.json");
 (async () => {

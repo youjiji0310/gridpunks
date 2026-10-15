@@ -7,8 +7,10 @@ module.exports = {
   solidity: { version: "0.8.24", settings: { optimizer: { enabled: true, runs: 200 }, evmVersion: "cancun" } },
   networks: {
     hardhat: { blockGasLimit: 100_000_000 },
-    robinhood: { url: process.env.RPC_URL || "https://rpc.mainnet.chain.robinhood.com", chainId: 4663, accounts },
-    robinhoodTestnet: { url: process.env.TESTNET_RPC_URL || "", chainId: 46630, accounts },
+    // Ink (Kraken's L2): docs.inkonchain.com/general/network-information
+    ink: { url: process.env.RPC_URL || "https://rpc-gel.inkonchain.com", chainId: 57073, accounts },
+    inkSepolia: { url: process.env.TESTNET_RPC_URL || "https://rpc-gel-sepolia.inkonchain.com", chainId: 763373, accounts },
+    robinhood: { url: "https://rpc.mainnet.chain.robinhood.com", chainId: 4663, accounts },
   },
 };
 

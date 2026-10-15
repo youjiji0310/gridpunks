@@ -10,7 +10,7 @@ module.exports = (req, res) => {
   res.setHeader("Cache-Control", "public, s-maxage=3600");
   res.status(200).json({
     name: cfg.name,
-    description: "10,000 pixel punks hidden in a 100 × 100 grid on Robinhood Chain. Pick a plot, the chain picks the punk.",
+    description: "10,000 pixel punks hidden in a 100 × 100 grid on Ink. Pick a plot, the chain picks the punk.",
     image: "data:image/svg+xml;base64," + Buffer.from(svg).toString("base64"),
     external_link: site || undefined,
     seller_fee_basis_points: 1000,

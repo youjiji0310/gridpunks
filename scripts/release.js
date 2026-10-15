@@ -1,6 +1,6 @@
 // Publish a puzzle on-chain. Solvers can mint in that zone at once; everyone else after HOURS.
-//   PowerShell:  $env:ZONE="0"; $env:HOURS="24"; npx hardhat run scripts/release.js --network robinhood
-//   bash:        ZONE=0 HOURS=24 npx hardhat run scripts/release.js --network robinhood
+//   PowerShell:  $env:ZONE="0"; $env:HOURS="24"; npx hardhat run scripts/release.js --network ink
+//   bash:        ZONE=0 HOURS=24 npx hardhat run scripts/release.js --network ink
 //   Golden Punk: ZONE=legend
 // Then post the printed text on X.
 const { ethers } = require("hardhat");

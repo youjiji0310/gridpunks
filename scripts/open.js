@@ -1,4 +1,4 @@
-// Open (or close with CLOSE=1) the mint.  npx hardhat run scripts/open.js --network robinhood
+// Open (or close with CLOSE=1) the mint.  npx hardhat run scripts/open.js --network ink
 const { ethers } = require("hardhat");
 const cfg = require("../site/config.json");
 (async () => {

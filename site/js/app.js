@@ -390,7 +390,7 @@
     const blob = JSON.stringify(e && (e.data || e)) + " " + (e && e.message);
     const m = blob.match(/0x[0-9a-f]{8}/gi) || [];
     for (const sel of m) if (ERRORS[sel.toLowerCase()]) return ERRORS[sel.toLowerCase()];
-    if (/insufficient funds/i.test(blob)) return "Not enough ETH on Robinhood Chain for the plots plus gas.";
+    if (/insufficient funds/i.test(blob)) return `Not enough ETH on ${cfg.chainName} for the plots plus gas.`;
     if (e && e.code === 4001) return "Transaction cancelled in your wallet.";
     return (e && e.message) || "Mint failed.";
   }

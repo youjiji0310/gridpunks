@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
 <title>GridPunks</title>
-<meta name="description" content="10,000 pixel punks hidden in a 100 × 100 grid on Robinhood Chain. Ten zones, ten puzzles, one Golden Punk.">
+<meta name="description" content="10,000 pixel punks hidden in a 100 × 100 grid on Ink. Ten zones, ten puzzles, one Golden Punk.">
 <link rel="icon" href="favicon.svg" type="image/svg+xml">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -20,7 +20,7 @@
 
 <main id="top">
   <section class="hero">
-    <p class="kicker">100 × 100 plots · Robinhood Chain</p>
+    <p class="kicker">100 × 100 plots · Ink</p>
     <h1>Pick a plot.<br><span>Meet your punk.</span></h1>
     <p class="lede">Ten thousand pixel punks are hiding in this grid, behind ten locked zones. Each zone opens with a puzzle. Crack it and you mint there first; everyone else waits 24 hours. Solve the final one and the Golden Punk is yours.</p>
     <dl class="specs">
@@ -118,8 +118,8 @@
       <details><summary>What is the Golden Punk?</summary><p>A one-of-one punk, token #10000, outside the grid. Its puzzle drops after the last zone and builds on all ten answers. The first wallet to solve it claims it for free.</p></details>
       <details><summary>What do I actually choose?</summary><p>The plot. Each of the 10,000 plots is one NFT, and its token number is its position (plot x, y has id <span class="num">y × 100 + x</span>). Pick a corner, your birthday, a spot next to a friend, or the dead centre.</p></details>
       <details><summary>Who decides the punk?</summary><p>The contract. When your mint lands it draws one punk at random from all the punks nobody has found yet, so no punk can appear twice and no plot is rarer than another before it is claimed. Minting from another contract is blocked, so nobody can retry until they get a rare one.</p></details>
-      <details><summary>What does it cost?</summary><p><span class="num" id="priceLabel2">0.0003</span> ETH per plot, plus network gas, which on Robinhood Chain is a tiny fraction of that. You can claim up to 20 plots in one transaction.</p></details>
-      <details><summary>Which wallet do I need?</summary><p>Any EVM wallet in your browser (MetaMask, Rabby, Coinbase Wallet, and similar) with a little ETH on Robinhood Chain. The site asks your wallet to add the network if it is missing.</p></details>
+      <details><summary>What does it cost?</summary><p><span class="num" id="priceLabel2">0.0003</span> ETH per plot, plus network gas, which on Ink is a tiny fraction of that. You can claim up to 20 plots in one transaction.</p></details>
+      <details><summary>Which wallet do I need?</summary><p>Any EVM wallet in your browser (MetaMask, Rabby, Coinbase Wallet, and similar) with a little ETH on Ink. The site asks your wallet to add the network if it is missing.</p></details>
       <details><summary>Can I check the set was fixed in advance?</summary><p>Yes. All 10,000 punks are in <a href="data/traits.json">traits.json</a>, and its sha256 hash is stored in the contract's <code>provenance</code> field before the mint opens.</p><p class="num small muted" id="provHash">loading…</p></details>
       <details><summary>Royalties?</summary><p>10% on secondary sales, declared on-chain (ERC-2981) for marketplaces that honour it.</p></details>
     </div>
@@ -127,7 +127,7 @@
 </main>
 
 <footer class="foot">
-  <span>GridPunks · community project, not affiliated with Robinhood.</span>
+  <span>GridPunks · community project, not affiliated with Ink or Kraken.</span>
   <span><a id="contractLink" href="#" target="_blank" rel="noopener">Contract</a> · <a id="xLink" href="https://x.com/" target="_blank" rel="noopener">X</a></span>
 </footer>
 

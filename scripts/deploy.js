@@ -1,4 +1,4 @@
-// Deploy GridPunks.  npx hardhat run scripts/deploy.js --network robinhood
+// Deploy GridPunks.  npx hardhat run scripts/deploy.js --network ink
 // Env: PRIVATE_KEY (deployer), SITE_URL (e.g. https://gridpunks.vercel.app), PUZZLE_PASSWORD
 const fs = require("fs");
 const path = require("path");
