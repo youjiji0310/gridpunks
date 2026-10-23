@@ -33,8 +33,20 @@
   const MIRROR_ABI = ["function ownerOf(uint256 id) view returns (address)", "function totalSupply() view returns (uint256)"];
   const REG_ABI = ["function handleOf(address who) view returns (string)"];
   let provider, token, mirror, registry;
+  // try several public RPCs, keep the first one that answers
+  const RPCS = [cfg.rpc, ...(cfg.rpcs || []), "https://bsc-dataseed.binance.org", "https://bsc-dataseed1.defibit.io", "https://bsc.publicnode.com", "https://1rpc.io/bnb"].filter((v, i, a) => v && a.indexOf(v) === i);
+  async function connectRpc() {
+    for (const url of RPCS) {
+      try {
+        const p = new ethers.JsonRpcProvider(url, cfg.chainId, { staticNetwork: true });
+        await Promise.race([p.getBlockNumber(), new Promise((_, r) => setTimeout(() => r(new Error("timeout")), 5000))]);
+        return p;
+      } catch (_) { /* next */ }
+    }
+    return new ethers.JsonRpcProvider(RPCS[0], cfg.chainId, { staticNetwork: true });
+  }
   if (live) {
-    provider = new ethers.JsonRpcProvider(cfg.rpc, cfg.chainId, { staticNetwork: true });
+    provider = await connectRpc();
     token = new ethers.Contract(cfg.contract, ABI, provider);
   }
   const handles = new Map();
@@ -54,7 +66,6 @@
   });
   const site = location.origin;
   ["c2", "c3"].forEach((id) => { $(id).textContent = $(id).textContent.replace("https://SITE", site); });
-  if (cfg.x) $("xLink").href = cfg.x;
   $("brandPunk").src = svgUrl(G.svg(traits[42], { size: 56 }));
 
   // hero: a living punk that changes every loop
@@ -77,7 +88,7 @@
     const pct = (S.sold / CURVE) * 100;
     $("cPct").textContent = pct.toFixed(2) + "%";
     $("cRaised").textContent = `${fmt(S.raised, 3)} BNB raised · graduates at ${fmt(TARGET, 2)} BNB → PancakeSwap`;
-    const st = S.graduated ? ["GRADUATED", "trade on PancakeSwap"] : S.open ? ["MINTING", `${pct.toFixed(2)}% to graduation`] : ["SOON", live ? "mint not open yet" : "preview: contract not deployed yet"];
+    const st = S.graduated ? ["GRADUATED", "trade on PancakeSwap"] : S.open ? ["MINTING", `${pct.toFixed(2)}% to graduation`] : live && !S.read ? ["LIVE", "reading the chain…"] : ["SOON", live ? "mint not open yet" : "preview: contract not deployed yet"];
     $("sStatus").textContent = st[0]; $("sStatusSub").textContent = st[1];
     $("liveDot").classList.toggle("live", S.open && !S.graduated);
     drawCurve();
@@ -100,9 +111,12 @@
     if (!live) return renderStats();
     try {
       const i = await token.info();
-      S = { sold: Number(i.sold), raised: Number(ethers.formatEther(i.raised)), next: Number(ethers.formatEther(i.nextPrice)), open: i.open, graduated: i.graduated };
+      S = { read: true, sold: Number(i.sold), raised: Number(ethers.formatEther(i.raised)), next: Number(ethers.formatEther(i.nextPrice)), open: i.open, graduated: i.graduated };
       renderStats(); updateCost(); refreshFeed();
-    } catch (e) { $("sStatusSub").textContent = "chain not reachable, retrying"; }
+    } catch (e) {
+      if (!S.read) { $("sStatus").textContent = "LIVE"; $("sStatusSub").textContent = "chain busy, retrying…"; }
+      provider = await connectRpc(); token = token.connect(provider);
+    }
   }
 
   // ---------------------------------------------------------------- mint panel
