@@ -3,8 +3,8 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
-<title>GridPunks</title>
-<meta name="description" content="10,000 pixel punks hidden in a 100 × 100 grid on Ink. Ten zones, ten puzzles, one Golden Punk.">
+<title>AgentPunks</title>
+<meta name="description" content="10,000 pixel punks on BNB Chain. Only AI agents with a .ai Agent ID can mint. The price climbs with every punk, then the curve graduates into a locked PancakeSwap pool.">
 <link rel="icon" href="favicon.svg" type="image/svg+xml">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -13,135 +13,183 @@
 </head>
 <body>
 <header class="bar">
-  <a class="brand" href="#top" aria-label="GridPunks home"><canvas id="brandPunk" width="24" height="24"></canvas><span>GridPunks</span></a>
-  <nav class="nav"><a href="#board">The Grid</a><a href="#puzzles">The Vault</a><a href="#how">How it works</a></nav>
-  <button class="btn btn-line" id="connect" type="button">Connect wallet</button>
+  <a class="brand" href="#top" aria-label="AgentPunks home"><img id="brandPunk" alt="" width="28" height="28"><span>AgentPunks</span></a>
+  <nav class="nav" aria-label="Sections">
+    <a href="#mint">mint</a><a href="#punks">punks</a><a href="#rules">rules</a><a href="#faq">faq</a><a href="#agents">agents</a><a id="xLink" href="https://x.com/" target="_blank" rel="noopener">x</a>
+  </nav>
+  <form class="lookup" id="lookupForm" autocomplete="off">
+    <label class="sr" for="lookupInput">Wallet address</label>
+    <input id="lookupInput" placeholder="wallet 0x… → punks" spellcheck="false">
+  </form>
 </header>
 
 <main id="top">
+  <!-- HERO -->
   <section class="hero">
-    <p class="kicker">100 × 100 plots · Ink</p>
-    <h1>Pick a plot.<br><span>Meet your punk.</span></h1>
-    <p class="lede">Ten thousand pixel punks are hiding in this grid, behind ten locked zones. Each zone opens with a puzzle. Crack it and you mint there first; everyone else waits 24 hours. Solve the final one and the Golden Punk is yours.</p>
-    <dl class="specs">
-      <div><dt>Plots</dt><dd class="num">10,000</dd></div>
-      <div><dt>Price</dt><dd class="num"><span id="priceLabel">0.0003</span> ETH</dd></div>
-      <div><dt>Claimed</dt><dd class="num"><span id="claimed">0</span></dd></div>
-      <div><dt>Zones live</dt><dd class="num"><span id="vaultLive">0</span> / 10</dd></div>
+    <div class="hero-copy">
+      <p class="kicker"><span class="dot" id="liveDot"></span><span id="chainLabel">BNB CHAIN</span> · agent-only · token + nft</p>
+      <h1>10,000 punks.<br><span>Only agents<br>can mint.</span></h1>
+      <p class="lede">1 token = 1 punk. Mint them from a Binance Agentic Wallet that holds a <b>.ai</b> name. Nobody else can. The price climbs with every punk; when the last one on the curve sells, the curve graduates into a PancakeSwap pool with its liquidity locked forever.</p>
+      <div class="cta">
+        <a class="btn btn-lime" href="#agents">mint with your agent</a>
+        <a class="btn btn-line" href="#punks">see the punks</a>
+      </div>
+    </div>
+    <figure class="hero-art">
+      <img id="heroPunk" alt="An AgentPunk forming from drifting dots" width="420" height="420">
+      <figcaption class="num" id="heroCap">punk #—</figcaption>
+    </figure>
+  </section>
+
+  <!-- STATS -->
+  <section class="stats" aria-label="Mint progress">
+    <div class="stat"><span class="label">price / punk</span><span class="value num" id="sPrice">0.000625</span><span class="unit">BNB · next punk</span></div>
+    <div class="stat"><span class="label">raised</span><span class="value num" id="sRaised">0</span><span class="unit">of <span id="sTarget">22.22</span> BNB</span></div>
+    <div class="stat"><span class="label">punks minted</span><span class="value num" id="sSold">0</span><span class="unit">of 8,888 on the curve</span></div>
+    <div class="stat"><span class="label">status</span><span class="value" id="sStatus">SOON</span><span class="unit" id="sStatusSub">mint not open yet</span></div>
+  </section>
+
+  <!-- CURVE -->
+  <section class="curve-card" aria-labelledby="curveTitle">
+    <div class="curve-head">
+      <h2 id="curveTitle">bonding curve</h2>
+      <span class="num pct" id="cPct">0.00%</span>
+    </div>
+    <div class="curve-wrap"><svg id="curveSvg" viewBox="0 0 800 220" preserveAspectRatio="none" role="img" aria-label="Price curve from 0.000625 to 0.01 BNB"></svg></div>
+    <div class="curve-foot num">
+      <span>punk #1 · 0.000625 BNB</span>
+      <span id="cRaised">0 BNB raised · graduates at 22.22 BNB → PancakeSwap</span>
+      <span>punk #8,888 · 0.01 BNB</span>
+    </div>
+    <p class="muted small">Every mint moves the price up the curve. Each payment splits in two: half to the team, half locked in the contract for the pool. The pool opens at the last curve price, so there is no jump at graduation.</p>
+  </section>
+
+  <!-- MINT + LIVE -->
+  <section class="split" id="mint">
+    <div class="panel mint-panel">
+      <div class="panel-head"><h2>mint</h2><span class="pill">agent-only</span></div>
+      <div class="stepper">
+        <button type="button" id="qMinus" aria-label="One less">−</button>
+        <label class="sr" for="qty">Punks</label>
+        <input id="qty" class="num" type="number" min="1" max="100" value="3" inputmode="numeric">
+        <span class="stepper-unit">punks</span>
+        <button type="button" id="qPlus" aria-label="One more">+</button>
+      </div>
+      <div class="chips" role="group" aria-label="Quick amounts">
+        <button type="button" data-q="1">1</button><button type="button" data-q="5">5</button><button type="button" data-q="10">10</button><button type="button" data-q="25">25</button><button type="button" data-q="100">100 · max</button>
+      </div>
+      <dl class="rows">
+        <div><dt>cost</dt><dd class="num" id="mCost">—</dd></div>
+        <div><dt>split</dt><dd class="num" id="mSplit">50% team · 50% pool</dd></div>
+        <div><dt>wallet cap</dt><dd class="num">100 punks (1%)</dd></div>
+      </dl>
+      <div class="say">
+        <span class="label">tell your agent</span>
+        <div class="copyline"><code id="sayText">mint 3 AgentPunks</code><button type="button" class="copy" data-copy="sayText">copy</button></div>
+        <span class="label">or run</span>
+        <div class="copyline"><code id="cliText">node punks.mjs mint --count 3</code><button type="button" class="copy" data-copy="cliText">copy</button></div>
+      </div>
+      <p class="muted small">Your agent previews the mint in Binance's risk engine, shows you the cost, and only sends it after you say yes. No .ai? Claim one in Binance Wallet → Agent ID.</p>
+      <details class="browser-mint">
+        <summary>mint from a browser wallet</summary>
+        <p class="muted small">Works only if this wallet itself holds a .ai Agent ID.</p>
+        <button type="button" class="btn btn-lime btn-block" id="walletMint">connect wallet</button>
+        <p class="small" id="walletMsg" role="status" aria-live="polite"></p>
+      </details>
+    </div>
+
+    <div class="panel live-panel">
+      <div class="panel-head"><h2>live</h2><span class="muted small">from the chain</span></div>
+      <ol class="feed" id="feed"><li class="muted small">Mints show up here.</li></ol>
+    </div>
+  </section>
+
+  <!-- PUNKS -->
+  <section class="punks" id="punks">
+    <div class="section-head">
+      <h2>the punks</h2>
+      <div class="tabs" role="tablist">
+        <button type="button" role="tab" aria-selected="true" data-tab="all">all</button>
+        <button type="button" role="tab" aria-selected="false" data-tab="rare">rarest</button>
+        <button type="button" role="tab" aria-selected="false" data-tab="mine" id="tabMine" hidden>wallet</button>
+      </div>
+    </div>
+    <p class="muted small" id="punksNote">Every punk is one of 10,000 fixed designs. Move a token and the punk can change hands or re-roll: that's how DN404 works.</p>
+    <div class="gallery" id="gallery"></div>
+    <div class="more"><button type="button" class="btn btn-line" id="loadMore">load more</button></div>
+  </section>
+
+  <!-- RULES -->
+  <section class="rules" id="rules">
+    <div class="section-head"><h2>rules</h2><span class="muted small">enforced by the contract</span></div>
+    <dl class="rule-table">
+      <div><dt>who can mint</dt><dd>Agent ID (.ai) holders only<small>checked on-chain: SPACE ID registry balanceOf</small></dd></div>
+      <div><dt>supply</dt><dd>10,000<small>8,888 on the curve · 1,112 for the pool · 1 token = 1 punk (DN404)</small></dd></div>
+      <div><dt>price</dt><dd>0.000625 → 0.01 BNB<small>constant-product curve, ×16</small></dd></div>
+      <div><dt>per wallet</dt><dd>100 punks (1%)<small>extra BNB is refunded in the same transaction</small></dd></div>
+      <div><dt>where the BNB goes</dt><dd>50% team · 50% pool<small>the pool half stays in the contract and cannot be withdrawn by anyone</small></dd></div>
+      <div><dt>selling</dt><dd>no sell-back to the curve<small>trade the punks as NFTs any time; after graduation the token trades on PancakeSwap</small></dd></div>
+      <div><dt>graduation</dt><dd>when punk #8,888 sells<small>1,112 units + the pool half (~11.1 BNB) → PancakeSwap pool, at the last curve price</small></dd></div>
+      <div><dt>LP</dt><dd>locked forever<small>LP tokens sent to 0x…dEaD, no withdraw function</small></dd></div>
+      <div><dt>pool front-running</dt><dd>blocked<small>nobody can put tokens into the pool pair before graduation</small></dd></div>
+      <div><dt>owner powers</dt><dd>start the mint once · withdraw the team half<small>cannot pause, mint extra, or touch the pool half · registry change = 24h timelock</small></dd></div>
     </dl>
   </section>
 
-  <section class="board" id="board" aria-label="The grid">
-    <div class="stage">
-      <div class="stage-top">
-        <div class="legend">
-          <span><i class="sw sw-empty"></i>Empty</span>
-          <span><i class="sw sw-sel"></i>Your pick</span>
-          <span><i class="sw sw-taken"></i>Claimed</span>
-        </div>
-        <form class="jump" id="jumpForm" autocomplete="off">
-          <label class="sr" for="jx">X</label><input id="jx" inputmode="numeric" placeholder="x" maxlength="2">
-          <label class="sr" for="jy">Y</label><input id="jy" inputmode="numeric" placeholder="y" maxlength="2">
-          <button class="btn btn-line btn-xs" type="submit">Go</button>
-        </form>
-      </div>
-      <div class="canvas-wrap" id="wrap">
-        <canvas id="grid" aria-label="Interactive 100 by 100 grid. Click empty plots to select them."></canvas>
-        <div class="hud num" id="hud" hidden></div>
-        <div class="zoom">
-          <button type="button" class="btn btn-line btn-xs" id="zoomIn" aria-label="Zoom in">+</button>
-          <button type="button" class="btn btn-line btn-xs" id="zoomOut" aria-label="Zoom out">−</button>
-          <button type="button" class="btn btn-line btn-xs" id="zoomFit">Fit</button>
-        </div>
-      </div>
-      <p class="hint muted">Scroll or pinch to zoom, drag to move. Click an empty plot to add it, click again to drop it.</p>
-    </div>
-
-    <aside class="panel" id="panel">
-      <div class="inspect" id="inspect">
-        <div class="inspect-art"><canvas id="inspectArt" width="240" height="240"></canvas></div>
-        <div class="inspect-info">
-          <p class="kicker" id="inspectCoord">Plot —</p>
-          <h3 id="inspectTitle">Hover the grid</h3>
-          <p class="muted small" id="inspectText">Empty plots show a question mark. Claimed plots show their punk and owner.</p>
-          <ul class="traits" id="inspectTraits"></ul>
-        </div>
-      </div>
-
-      <div class="cart">
-        <div class="cart-head">
-          <h3>Your plots</h3>
-          <button type="button" class="link" id="clearSel" hidden>Clear</button>
-        </div>
-        <ul class="chips" id="chips"><li class="muted small">No plots picked yet.</li></ul>
-        <div class="row-actions">
-          <button type="button" class="btn btn-line btn-xs" id="luckyBtn">Pick a random plot</button>
-        </div>
-        <div class="total">
-          <span class="muted">Total</span>
-          <strong class="num" id="total">0 ETH</strong>
-        </div>
-        <button type="button" class="btn btn-lime btn-block" id="mintBtn" disabled>Pick at least one plot</button>
-        <p class="status small" id="status" role="status" aria-live="polite"></p>
-      </div>
-    </aside>
+  <!-- FAQ -->
+  <section class="faq" id="faq">
+    <div class="section-head"><h2>faq</h2><span class="muted small">what if…</span></div>
+    <details><summary>What if the curve never sells out?</summary><p>Then there is no PancakeSwap pool. Your punks stay yours and you can trade them as NFTs on any BNB Chain marketplace. The pool half stays locked in the contract until the last curve punk sells.</p></details>
+    <details><summary>Can I get my BNB back?</summary><p>No. There is no sell-back to the curve. You can sell your punks to other people as NFTs, or on PancakeSwap after graduation.</p></details>
+    <details><summary>Can the team take the pool BNB?</summary><p>No. Half of each payment is booked for the team and half for the pool. The contract only lets the team withdraw its own half. The pool half can only go into the PancakeSwap pool.</p></details>
+    <details><summary>Why does the team get half?</summary><p>That is how the project is funded, and it is written in the contract and on this page before you mint. The other half makes sure the token has real liquidity from the first second on PancakeSwap.</p></details>
+    <details><summary>Can I transfer or list my punks before graduation?</summary><p>Yes. Punks are normal NFTs (ERC-721 mirror) and the units are a normal token (ERC-20). The only blocked move is sending units into the pool pair before graduation.</p></details>
+    <details><summary>Why agents only?</summary><p>Bots and sniping scripts normally take everything. Here only wallets with a Binance Agent ID can buy on the curve, and each wallet is capped at 100 punks.</p></details>
   </section>
 
-  <section class="vault" id="puzzles">
-    <div class="vault-head">
-      <p class="kicker">The Vault</p>
-      <h2>Ten zones. Ten locks.</h2>
-      <p class="muted">Every zone is ten rows of the grid, sealed until its puzzle drops. Solve it to claim plots there right away; after 24 hours the zone opens to everyone. Your answer never leaves your browser: it becomes a key that signs your wallet address, so nobody can copy your way in.</p>
-      <p class="small muted">You solved <b class="num" id="vaultSolved">0</b> of 10 in this browser.</p>
-    </div>
-    <div class="vault-body">
-      <ol class="zones" id="zoneList"></ol>
-      <article class="legend-card" id="legend" data-state="sealed">
-        <div class="legend-art"><canvas id="legendArt" width="240" height="240"></canvas></div>
-        <div class="legend-info">
-          <div class="zone-head"><span class="zone-name">The Golden Punk</span><span class="zone-rows num">token #10000 · 1 of 1</span><span class="pill" id="legendPill">Sealed</span></div>
-          <pre class="riddle" id="legendText" hidden></pre>
-          <form class="answer" id="legendForm" hidden autocomplete="off"><label class="sr" for="legendInput">Final answer</label>
-            <input id="legendInput" type="text" placeholder="Final answer" spellcheck="false" autocapitalize="off">
-            <button class="btn btn-line btn-xs" type="submit">Check</button></form>
-          <button type="button" class="btn btn-gold btn-block" id="legendClaim" hidden>Claim the Golden Punk</button>
-          <p class="small" id="legendMsg" role="status" aria-live="polite"></p>
-        </div>
-      </article>
-    </div>
-  </section>
-
-  <section class="how" id="how">
-    <h2>How it works</h2>
-    <div class="qa">
-      <details open><summary>How do the puzzles work?</summary><p>The grid has ten zones of ten rows each. Each zone drops a puzzle on-chain and on X: ciphers, codes and crypto history, easy at first and harder later. Type your answer in the Vault. If it is right, plots in that zone unlock for your wallet straight away. Twenty-four hours later the zone opens to everyone.</p><p>Answers ignore capitals, spaces and punctuation. Only a hash of each answer is on-chain, stretched so it cannot be cracked by guessing fast.</p></details>
-      <details><summary>What is the Golden Punk?</summary><p>A one-of-one punk, token #10000, outside the grid. Its puzzle drops after the last zone and builds on all ten answers. The first wallet to solve it claims it for free.</p></details>
-      <details><summary>What do I actually choose?</summary><p>The plot. Each of the 10,000 plots is one NFT, and its token number is its position (plot x, y has id <span class="num">y × 100 + x</span>). Pick a corner, your birthday, a spot next to a friend, or the dead centre.</p></details>
-      <details><summary>Who decides the punk?</summary><p>The contract. When your mint lands it draws one punk at random from all the punks nobody has found yet, so no punk can appear twice and no plot is rarer than another before it is claimed. Minting from another contract is blocked, so nobody can retry until they get a rare one.</p></details>
-      <details><summary>What does it cost?</summary><p><span class="num" id="priceLabel2">0.0003</span> ETH per plot, plus network gas, which on Ink is a tiny fraction of that. You can claim up to 20 plots in one transaction.</p></details>
-      <details><summary>Which wallet do I need?</summary><p>Any EVM wallet in your browser (MetaMask, Rabby, Coinbase Wallet, and similar) with a little ETH on Ink. The site asks your wallet to add the network if it is missing.</p></details>
-      <details><summary>Can I check the set was fixed in advance?</summary><p>Yes. All 10,000 punks are in <a href="data/traits.json">traits.json</a>, and its sha256 hash is stored in the contract's <code>provenance</code> field before the mint opens.</p><p class="num small muted" id="provHash">loading…</p></details>
-      <details><summary>Royalties?</summary><p>10% on secondary sales, declared on-chain (ERC-2981) for marketplaces that honour it.</p></details>
-    </div>
+  <!-- AGENTS -->
+  <section class="agents" id="agents">
+    <div class="section-head"><h2>for agents</h2><span class="muted small">setup · once</span></div>
+    <ol class="setup">
+      <li>Binance App → Agentic Wallet: turn on <b>Developer Mode</b> (needed for any contract call).</li>
+      <li>Claim a <b>.ai Agent ID</b> in Binance Wallet (Agent ID banner). It's bound to your Agentic Wallet.</li>
+      <li>Install the Binance Agentic Wallet CLI:<div class="copyline"><code id="c1">npm i -g @binance/agentic-wallet</code><button type="button" class="copy" data-copy="c1">copy</button></div></li>
+      <li>Get the AgentPunks CLI (one file, no install):<div class="copyline"><code id="c2">curl -O https://SITE/punks.mjs</code><button type="button" class="copy" data-copy="c2">copy</button></div></li>
+      <li>Give your agent the skill:<div class="copyline"><code id="c3">https://SITE/skill.md</code><button type="button" class="copy" data-copy="c3">copy</button></div></li>
+      <li>Sign in:<div class="copyline"><code id="c4">baw auth signin</code><button type="button" class="copy" data-copy="c4">copy</button></div></li>
+      <li>Check everything:<div class="copyline"><code id="c5">node punks.mjs preflight</code><button type="button" class="copy" data-copy="c5">copy</button></div></li>
+    </ol>
+    <div class="section-head"><h3>commands</h3></div>
+    <dl class="cmds">
+      <div><dt><code>node punks.mjs info</code></dt><dd>progress, price, my punks</dd></div>
+      <div><dt><code>node punks.mjs quote --count 5</code></dt><dd>cost of 5 punks</dd></div>
+      <div><dt><code>node punks.mjs mint --count 5</code></dt><dd>preview → requestId</dd></div>
+      <div><dt><code>node punks.mjs execute --request-id …</code></dt><dd>send it (after you say yes)</dd></div>
+      <div><dt><code>node punks.mjs punks</code></dt><dd>my punks + traits</dd></div>
+    </dl>
+    <p class="muted small">The CLI never holds keys: it builds the call, Binance's Agentic Wallet previews and signs it, and nothing is sent until you confirm.</p>
   </section>
 </main>
 
 <footer class="foot">
-  <span>GridPunks · community project, not affiliated with Ink or Kraken.</span>
-  <span><a id="contractLink" href="#" target="_blank" rel="noopener">Contract</a> · <a id="xLink" href="https://x.com/" target="_blank" rel="noopener">X</a></span>
+  <div class="addrs num" id="addrs"></div>
+  <p class="muted small">AgentPunks is an experiment. Punks and units can lose all value; nothing here is financial advice. Not affiliated with Binance, BNB Chain, SPACE ID or PancakeSwap.</p>
 </footer>
 
-<div class="reveal" id="reveal" hidden>
-  <div class="reveal-card" role="dialog" aria-modal="true" aria-labelledby="revealTitle">
-    <p class="kicker">Mint confirmed</p>
-    <h2 id="revealTitle">You found them.</h2>
-    <div class="reveal-grid" id="revealGrid"></div>
-    <button type="button" class="btn btn-lime" id="revealClose">Back to the grid</button>
+<div class="modal" id="modal" hidden>
+  <div class="modal-card" role="dialog" aria-modal="true" aria-labelledby="mTitle">
+    <button type="button" class="modal-x" id="mClose" aria-label="Close">×</button>
+    <img id="mArt" alt="" width="320" height="320">
+    <div class="modal-info">
+      <h3 id="mTitle">AgentPunks #1</h3>
+      <p class="num small muted" id="mOwner"></p>
+      <ul class="traits" id="mTraits"></ul>
+    </div>
   </div>
 </div>
+<div class="toast" id="toast" hidden></div>
 
 <script src="js/vendor/ethers-6.umd.min.js"></script>
-<script src="js/answer.js"></script>
 <script src="js/punks.js"></script>
 <script src="js/app.js"></script>
 </body>

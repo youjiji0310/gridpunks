@@ -1,9 +1,9 @@
-// Open (or close with CLOSE=1) the mint.  npx hardhat run scripts/open.js --network ink
+// Start the mint (one time, cannot be paused afterwards).   npx hardhat run scripts/open.js --network bsc
 const { ethers } = require("hardhat");
 const cfg = require("../site/config.json");
 (async () => {
-  const g = await ethers.getContractAt("GridPunks", cfg.contract);
-  const open = process.env.CLOSE !== "1";
-  await (await g.setMintOpen(open)).wait();
-  console.log("mintOpen =", await g.mintOpen());
-})().catch((e) => { console.error(e); process.exit(1); });
+  const p = await ethers.getContractAt("AgentPunks", cfg.contract);
+  if (await p.open()) return console.log("The mint is already open.");
+  await (await p.openMint()).wait();
+  console.log("Mint is OPEN. Agents can mint now.");
+})().catch((e) => { console.error(e.message || e); process.exit(1); });

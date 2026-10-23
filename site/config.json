@@ -1,10 +1,10 @@
 {
-  "name": "GridPunks",
+  "name": "AgentPunks",
   "contract": "",
-  "chainId": 57073,
-  "chainName": "Ink",
-  "rpc": "https://rpc-gel.inkonchain.com",
-  "explorer": "https://explorer.inkonchain.com",
-  "priceEth": "0.0003",
+  "deployBlock": 0,
+  "chainId": 56,
+  "chainName": "BNB Smart Chain",
+  "rpc": "https://bsc-rpc.publicnode.com",
+  "explorer": "https://bscscan.com",
   "x": "https://x.com/"
 }

@@ -6,7 +6,9 @@ const accounts = process.env.PRIVATE_KEY ? [process.env.PRIVATE_KEY] : [];
 module.exports = {
   solidity: { version: "0.8.24", settings: { optimizer: { enabled: true, runs: 200 }, evmVersion: "cancun" } },
   networks: {
-    hardhat: { blockGasLimit: 100_000_000 },
+    hardhat: { blockGasLimit: 100_000_000, accounts: { count: 100 } },
+    bsc: { url: process.env.RPC_URL || "https://bsc-dataseed.binance.org", chainId: 56, accounts },
+    bscTestnet: { url: process.env.TESTNET_RPC_URL || "https://data-seed-prebsc-1-s1.binance.org:8545", chainId: 97, accounts },
     // Ink (Kraken's L2): docs.inkonchain.com/general/network-information
     ink: { url: process.env.RPC_URL || "https://rpc-gel.inkonchain.com", chainId: 57073, accounts },
     inkSepolia: { url: process.env.TESTNET_RPC_URL || "https://rpc-gel-sepolia.inkonchain.com", chainId: 763373, accounts },

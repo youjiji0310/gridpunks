@@ -1,11 +1,10 @@
-// Send the mint proceeds to your wallet (or TO=0x...).  npx hardhat run scripts/withdraw.js --network ink
+// Send the team half of the mint money to the TEAM wallet.   npx hardhat run scripts/withdraw.js --network bsc
 const { ethers } = require("hardhat");
 const cfg = require("../site/config.json");
 (async () => {
-  const [me] = await ethers.getSigners();
-  const g = await ethers.getContractAt("GridPunks", cfg.contract);
-  const bal = await ethers.provider.getBalance(cfg.contract);
-  console.log("Contract balance:", ethers.formatEther(bal), "ETH");
-  await (await g.withdraw(process.env.TO || me.address)).wait();
-  console.log("Withdrawn to", process.env.TO || me.address);
-})().catch((e) => { console.error(e); process.exit(1); });
+  const p = await ethers.getContractAt("AgentPunks", cfg.contract);
+  const owed = await p.teamOwed();
+  if (owed === 0n) return console.log("Nothing to withdraw yet.");
+  await (await p.withdrawTeam()).wait();
+  console.log(`Sent ${ethers.formatEther(owed)} BNB to ${await p.team()}`);
+})().catch((e) => { console.error(e.message || e); process.exit(1); });
